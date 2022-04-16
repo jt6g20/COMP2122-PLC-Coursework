@@ -1,5 +1,6 @@
 import Tokens
 import System.IO
+import Grammar
 import System.Environment
 import Control.Exception
 
@@ -10,7 +11,7 @@ lexer :: IO ()
 lexer = do
     (fileName : _) <- getArgs
     contents <- readFile fileName
-    putStrLn $ show $ alexScanTokens contents
+    putStrLn $ show $ parseSQL $ alexScanTokens contents
 
 handler :: ErrorCall -> IO ()
 handler e = do

@@ -6,3 +6,7 @@ Main.o
 Tokens.hi
 Tokens.hs
 Tokens.o
+Grammar.hi
+Grammar.hs
+Grammar.o
+happy.exe
