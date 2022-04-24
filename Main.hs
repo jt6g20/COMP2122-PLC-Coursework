@@ -33,6 +33,7 @@ inputToList s = [replace x | x <- lines s, x /= ""]
 
 listToOutput :: [String] -> String
 listToOutput [] = []
+listToOutput (('@':x):xs) = listToOutput xs
 listToOutput (x:xs) = x ++ " .\n" ++ listToOutput xs
 
 replace :: String -> String
