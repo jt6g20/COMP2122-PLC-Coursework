@@ -2,6 +2,9 @@ module Prefixes where
 import Utilities
 import Data.List
 
+
+type Triple = (String, String, String)
+
 --builds the list of prefixes from the whole string to refer to when rewriting
 --and calls the actual iterative function
 prefixes :: [String] -> [String]
@@ -11,13 +14,8 @@ prefixes x = prefixIt x (buildPrefixes x)
 --prefixIt :: [String] -> [(String, String)] -> [String]
 --prefixIt x ps = ps
 prefixIt [] ps = []
-prefixIt (x:xs) ps | "@" `isPrefixOf` x = x : prefixIt xs ps
-                   | otherwise = unwords (mapp rmvPrefix (take 3 (splitOn ' ' x)) ps) : prefixIt xs ps
-
---custom implementation of map that takes in a second constant argument
-mapp :: (a -> b -> a) -> [a] -> b -> [a]
-mapp _ []     ys = []
-mapp f (x:xs) ys = f x ys : mapp f xs ys
+prefixIt (('@':'p':x):xs) ps = x : prefixIt xs ps
+prefixIt (x:xs) ps = unwords (mapp rmvPrefix (take 3 (splitOn ' ' x)) ps) : prefixIt xs ps
 
 --if string isn't already URI or base URI reference,
 --find the prefix reference and return the new string
