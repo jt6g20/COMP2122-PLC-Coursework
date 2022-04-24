@@ -12,7 +12,7 @@ prefixes x = prefixIt x (buildPrefixes x)
 --prefixIt x ps = ps
 prefixIt [] ps = []
 prefixIt (x:xs) ps | "@" `isPrefixOf` x = x : prefixIt xs ps
-                   | otherwise = (unwords (mapp rmvPrefix (take 3 (splitOn ' ' x)) ps){- ++ " ."-}) : prefixIt xs ps
+                   | otherwise = unwords (mapp rmvPrefix (take 3 (splitOn ' ' x)) ps) : prefixIt xs ps
 
 --custom implementation of map that takes in a second constant argument
 mapp :: (a -> b -> a) -> [a] -> b -> [a]
