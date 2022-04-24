@@ -14,7 +14,7 @@ prefixes x = prefixIt x (buildPrefixes x)
 --prefixIt :: [String] -> [(String, String)] -> [String]
 --prefixIt x ps = ps
 prefixIt [] ps = []
-prefixIt (('@':'p':x):xs) ps = x : prefixIt xs ps
+prefixIt (('@':'p':x):xs) ps = ('@':'p':x) : prefixIt xs ps
 prefixIt (x:xs) ps = unwords (mapp rmvPrefix (take 3 (splitOn ' ' x)) ps) : prefixIt xs ps
 
 --if string isn't already URI or base URI reference,
