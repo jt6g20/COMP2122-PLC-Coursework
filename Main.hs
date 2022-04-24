@@ -1,16 +1,21 @@
 import Tokens
 import System.IO
 import Data.List
+import Data.Char
 import Grammar
 import System.Environment
 import Control.Exception
+import Utilities
+import PredicateLists
+import ObjectLists
+import Bases
+import Prefixes
 
 main :: IO ()
 -- main = catch lexer handler
 main = do
     contents <- readFile "Inputs/foo.ttl"
-    fileName <- getLine
-    putStrLn $ listToOutput $ replacePredList $ inputToList contents
+    putStrLn $ listToOutput $ prefixes $ bases $ objLists $ predLists $ inputToList contents
 
 -- lexer :: IO ()
 -- lexer = do
@@ -24,28 +29,16 @@ main = do
 --     putStrLn ("Error " ++ error)
 
 inputToList :: String -> [String]
-inputToList s = [x | x <- lines $ s, x /= ""]
+inputToList s = [replace x | x <- lines s, x /= ""]
 
 listToOutput :: [String] -> String
 listToOutput [] = []
 listToOutput (x:xs) = x ++ "\n" ++ listToOutput xs
 
-
-predListEvaluator :: String -> [String] -> [String]
-predListEvaluator "" (x:xs) = x : predListEvaluator (head $ words $ x) xs
-predListEvaluator subj (x:xs) = (subj ++ x) : predListEvaluator subj xs
-predListEvaluator _ _ = []
-
-predListSeparator :: String -> [String]
-predListSeparator s = map (\a -> [x | x <- a, x /= ';']) $ groupBy (\a b -> b /= ';') s
-
-predicateList :: String -> [String]
-predicateList s = predListEvaluator "" $ predListSeparator s
-
-replacePredList :: [String] -> [String]
-replacePredList (x:xs) | ';' `elem` x = predicateList x ++ replacePredList xs
-                       | otherwise = x : replacePredList xs
-replacePredList _ = []
+replace :: String -> String
+replace xs | Just xs <- stripPrefix "><" xs = "> <" ++ replace xs
+replace (x:xs) = x : replace xs
+replace [] = []
 
 
 -- "<testSubA> <testPredList> -5 ; <testPredList> 10 ; <testPredList> 20 ."

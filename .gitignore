@@ -10,3 +10,13 @@ Grammar.hi
 Grammar.hs
 Grammar.o
 happy.exe
+Utilities.hi
+Utilities.o
+ObjectLists.hi
+ObjectLists.o
+PredicateLists.hi
+PredicateLists.o
+Bases.hi
+Bases.o
+Prefixes.hi
+Prefixes.o
