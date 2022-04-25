@@ -10,7 +10,7 @@ import PredicateLists
 import ObjectLists
 import Bases
 import Prefixes
-import Select
+import SelectAttributes
 import Rule
 
 main :: IO ()
