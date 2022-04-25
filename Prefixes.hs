@@ -3,7 +3,6 @@ import Utilities
 import Data.List
 
 
-type Triple = (String, String, String)
 
 --builds the list of prefixes from the whole string to refer to when rewriting
 --and calls the actual iterative function
