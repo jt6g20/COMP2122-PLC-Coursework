@@ -19,10 +19,11 @@ main = do
     (fileName : _) <- getArgs
     stmtString <- readFile fileName
     let stmt = parseSQL $ alexScanTokens stmtString
-    let fileName = queryFile stmt
 
-    contents <- readFile ("Inputs/" ++ fileName ++ ".ttl")
-    let triples = stringListToTripleList $ onlyTriples $ prefixes $ bases $ objLists $ predLists $ inputToList contents
+    let inputFiles = queryFile stmt
+    contents <- mapM readFile inputFiles
+
+    let triples = inputsToTriples contents
     print triples
 
 --evaluator (Stmt q) = evaluator q
@@ -31,11 +32,24 @@ main = do
 -- Stmt (QueryCondition (Attributes Subj (Attributes Pred (AttributeObj Obj))) (File "foo") (ConditionOR (AttributeEq Pred (AttributeString "http://www.cw.org/problem3/#predicate1")) (ConditionOR (AttributeEq Pred (AttributeString 
 -- "http://www.cw.org/problem3/#predicate2")) (AttributeEq Pred (AttributeString "http://www.cw.org/problem3/#predicate3")))))
 
-queryFile :: Stmt -> String
-queryFile (Stmt (Query _ (File f))) = f
-queryFile (StmtOutput (Query _ (File f)) _) = f
-queryFile (Stmt (QueryCondition _ (File f) _)) = f
-queryFile (StmtOutput (QueryCondition _ (File f) _) _) = f
+queryFile :: Stmt -> [FilePath]
+queryFile (Stmt (Query _ f)) = getFilePaths f
+queryFile (StmtOutput (Query _ f) _) = getFilePaths f
+queryFile (Stmt (QueryCondition _ f _)) = getFilePaths f
+queryFile (StmtOutput (QueryCondition _ f _) _) = getFilePaths f
+
+getFilePaths :: File -> [FilePath]
+getFilePaths (File x) = ["Inputs/" ++ x ++ ".ttl"]
+getFilePaths (Files x y) = getFilePaths x ++ getFilePaths y
+
+inputsToTriples :: [String] -> [Triple]
+inputsToTriples = foldr
+      (\ x
+         -> (++)
+              (stringListToTripleList
+                 (onlyTriples
+                    $ prefixes $ bases $ objLists $ predLists $ inputToList x)))
+      []
 
 subj :: Triple -> String
 subj (x, _, _) = x
@@ -90,15 +104,8 @@ objMatch :: String -> Triple -> Bool
 objMatch s (_, _, x) = x == s
 
 evaluator :: Query -> [Triple]
-evaluator (QueryCondition a f c) = select a (rule c f)
-
---
-
-concatFiles :: File -> [Triple]
-concatFiles (Files x y) = concatFiles x ++ concatFiles y
-concatFiles (File x) = stringListToTripleList $ onlyTriples $ prefixes $ bases $ objLists $ predLists $ inputToList (readTTLFile (x ++ ".ttl"))
-
--- write readTTLFile function
+evaluator (QueryCondition a f c) = []
+--evaluator (QueryCondition a f c) = select a (rule c f)
 
 {-
 data Stmt = Stmt Query
