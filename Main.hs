@@ -10,6 +10,8 @@ import PredicateLists
 import ObjectLists
 import Bases
 import Prefixes
+import Select
+import Rule
 
 main :: IO ()
 -- main = catch lexer handler
@@ -24,7 +26,7 @@ main = do
     print triples
 
 --evaluator (Stmt q) = evaluator q
-e--valuator (StmtOutput q s) = evaluator q
+--evaluator (StmtOutput q s) = evaluator q
 
 -- Stmt (QueryCondition (Attributes Subj (Attributes Pred (AttributeObj Obj))) (File "foo") (ConditionOR (AttributeEq Pred (AttributeString "http://www.cw.org/problem3/#predicate1")) (ConditionOR (AttributeEq Pred (AttributeString 
 -- "http://www.cw.org/problem3/#predicate2")) (AttributeEq Pred (AttributeString "http://www.cw.org/problem3/#predicate3")))))
@@ -71,8 +73,6 @@ replace (x:xs) = x : replace xs
 replace [] = []
 
 
-type Triple = (String, String, String)
-
 tripleListToTriple :: [String] -> Triple
 tripleListToTriple xs = (head xs, xs!!1, xs!!2)
 
@@ -92,15 +92,6 @@ objMatch s (_, _, x) = x == s
 evaluator :: Query -> [Triple]
 evaluator (QueryCondition a f c) = select a (rule c f)
 
-
-select :: Attribute -> [Triple] -> [Triple]
-select (Attributes x y) t = select x t ++ select y t
-select Subj t = undefined--list comp
---
-
-rule :: Condition -> [Triple] -> [Triple]
-rule (ConditionAND x y) t = undefined
-rule (ConditionOR x y) t = undefined
 --
 
 concatFiles :: File -> [Triple]

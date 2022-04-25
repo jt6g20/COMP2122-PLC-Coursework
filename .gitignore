@@ -20,3 +20,7 @@ Bases.hi
 Bases.o
 Prefixes.hi
 Prefixes.o
+Rule.hi
+Rule.o
+Select.hi
+Select.o

@@ -1,6 +1,8 @@
 module Utilities where
 import Data.List
 
+type Triple = (String, String, String)
+
 --splits string based on char delimiter
 splitOn :: Char -> String -> [String]
 splitOn c s = map (\a -> [x | x <- a, x /= c]) $ groupBy (\a b -> b /= c) s
