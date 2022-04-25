@@ -22,5 +22,5 @@ Prefixes.hi
 Prefixes.o
 Rule.hi
 Rule.o
-Select.hi
-Select.o
+SelectAttributes.hi
+SelectAttributes.o

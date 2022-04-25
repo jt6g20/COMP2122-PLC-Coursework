@@ -1,6 +1,7 @@
 module SelectAttributes where
 import Grammar
 import Utilities
+import Text.Read
 
 -- Stmt (QueryCondition (Attributes Subj (Attributes Pred (AttributeObj Obj))) (File "foo") (ConditionOR (AttributeEq Pred (AttributeString "http://www.cw.org/problem3/#predicate1")) (ConditionOR (AttributeEq Pred (AttributeString 
 -- "http://www.cw.org/problem3/#predicate2")) (AttributeEq Pred (AttributeString "http://www.cw.org/problem3/#predicate3")))))
@@ -19,6 +20,7 @@ listToTriple :: [String] -> Triple
 listToTriple (x:y:z:_) = (x,y,z)
 listToTriple [x, y] = (x,y,"_")
 listToTriple [x] = (x,"_","_")
+listToTriple _ = ("_", "_", "_")
 
 selectTriple :: Attribute -> Triple -> [String]
 selectTriple (Attributes a as) t = tripleIsolate a t : selectTriple as t
@@ -28,10 +30,15 @@ tripleIsolate :: Attribute -> Triple -> String
 tripleIsolate Subj t = subjLookup t
 tripleIsolate Pred t = predLookup t
 tripleIsolate (AttributeObj Obj) t = objLookup t
-tripleIsolate (AttributeObj (ObjAdd i)) t = show $ (objNumToInt $ objLookup t) + i
+tripleIsolate (AttributeObj (ObjAdd i)) t | num == Nothing = ":("
+                                          | otherwise = show $ (maybeIntToInt num) + i
+    where num = objNumToInt $ objLookup t
 tripleIsolate (AttributeString s) _ = s
 tripleIsolate (AttributeBoolean b) _ = show b
 
-objNumToInt :: String -> Int
-objNumToInt (x:xs) | x == '+' = read xs
-objNumToInt s = read s
+objNumToInt :: String -> Maybe Int
+objNumToInt (x:xs) | x == '+' = readMaybe xs
+objNumToInt s = readMaybe s
+
+maybeIntToInt :: Maybe Int -> Int
+maybeIntToInt (Just i) = i
