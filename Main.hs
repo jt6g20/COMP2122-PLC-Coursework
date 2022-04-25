@@ -21,8 +21,10 @@ main = do
 
     contents <- readFile ("Inputs/" ++ fileName ++ ".ttl")
     let triples = stringListToTripleList $ onlyTriples $ prefixes $ bases $ objLists $ predLists $ inputToList contents
-    putStrLn $ show $ triples
+    print triples
 
+--evaluator (Stmt q) = evaluator q
+e--valuator (StmtOutput q s) = evaluator q
 
 -- Stmt (QueryCondition (Attributes Subj (Attributes Pred (AttributeObj Obj))) (File "foo") (ConditionOR (AttributeEq Pred (AttributeString "http://www.cw.org/problem3/#predicate1")) (ConditionOR (AttributeEq Pred (AttributeString 
 -- "http://www.cw.org/problem3/#predicate2")) (AttributeEq Pred (AttributeString "http://www.cw.org/problem3/#predicate3")))))
@@ -53,7 +55,7 @@ obj (_, _, x) = x
 --     putStrLn ("Error " ++ error)
 
 onlyTriples :: [String] -> [String]
-onlyTriples xs = [(a:as) | (a:as) <- xs, a /= '@']
+onlyTriples xs = [a:as | (a:as) <- xs, a /= '@']
 
 inputToList :: String -> [String]
 inputToList s = [replace x | x <- lines s, x /= ""]
@@ -72,7 +74,7 @@ replace [] = []
 type Triple = (String, String, String)
 
 tripleListToTriple :: [String] -> Triple
-tripleListToTriple xs = (xs!!0, xs!!1, xs!!2)
+tripleListToTriple xs = (head xs, xs!!1, xs!!2)
 
 stringListToTripleList :: [String] -> [Triple]
 stringListToTripleList = map (tripleListToTriple . words)
@@ -81,12 +83,59 @@ condition :: String -> [Triple] -> [Triple]
 condition s xs = [x | x <- xs, subjMatch s x]
 
 subjMatch :: String -> Triple -> Bool
-subjMatch s (x, _, _) | x == s = True
-                      | otherwise = False
+subjMatch s (x, _, _) = x == s
 predMatch :: String -> Triple -> Bool
-predMatch s (_, x, _) | x == s = True
-                      | otherwise = False
+predMatch s (_, x, _) = x == s
 objMatch :: String -> Triple -> Bool
-objMatch s (_, _, x) | x == s = True
-                     | otherwise = False
+objMatch s (_, _, x) = x == s
 
+evaluator :: Query -> [Triple]
+evaluator (QueryCondition a f c) = select a (rule c f)
+
+
+select :: Attribute -> [Triple] -> [Triple]
+select (Attributes x y) t = select x t ++ select y t
+select Subj t = undefined--list comp
+--
+
+rule :: Condition -> [Triple] -> [Triple]
+rule (ConditionAND x y) t = undefined
+rule (ConditionOR x y) t = undefined
+--
+
+concatFiles :: File -> [Triple]
+concatFiles (Files x y) = concatFiles x ++ concatFiles y
+concatFiles (File x) = stringListToTripleList $ onlyTriples $ prefixes $ bases $ objLists $ predLists $ inputToList (readTTLFile (x ++ ".ttl"))
+
+-- write readTTLFile function
+
+{-
+data Stmt = Stmt Query
+          | StmtOutput Query String
+            deriving Show 
+data Query = QueryCondition Attribute File Condition
+            | Query Attribute File
+            deriving Show 
+data File = Files File File
+            | File String
+            deriving Show 
+data Condition = ConditionAND Condition Condition
+                | ConditionOR Condition Condition
+                | Greater Attribute Int
+                | Less Attribute Int
+                | NumEq Attribute Int
+                | AttributeEq Attribute Attribute
+                | AttributeIn Attribute Query
+                deriving Show
+data Attribute = Attributes Attribute Attribute
+                | Subj
+                | Pred
+                | AttributeObj Obj
+                | AttributeString String
+                | AttributeBoolean Bool
+                deriving Show
+data Obj = Obj
+         | ObjAdd Int
+         deriving Show
+}
+-}
