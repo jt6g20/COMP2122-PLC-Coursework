@@ -2,8 +2,6 @@ module Prefixes where
 import Utilities
 import Data.List
 
-
-
 --builds the list of prefixes from the whole string to refer to when rewriting
 --and calls the actual iterative function
 prefixes :: [String] -> [String]
@@ -19,7 +17,7 @@ prefixIt (x:xs) ps = unwords (mapp rmvPrefix (take 3 (splitOn ' ' x)) ps) : pref
 --if string isn't already URI or base URI reference,
 --find the prefix reference and return the new string
 rmvPrefix :: String -> [(String, String)] -> String
-rmvPrefix x ps | not ("<" `isPrefixOf` x) && (":" `isInfixOf` x) = "<" ++ findURI (head split) ps ++ last split ++ ">"
+rmvPrefix x ps | not ("<" `isPrefixOf` x) && (":" `isInfixOf` x) = findURI (head split) ps ++ last split ++ ">"
                | otherwise = x
                where split = splitOn ':' x
                      findURI x [] = error "unknown prefix"
@@ -32,4 +30,4 @@ buildPrefixes [] = []
 buildPrefixes (x:xs) | "@prefix" `isPrefixOf` x = (name, uri) : buildPrefixes xs
                      | otherwise = buildPrefixes xs
                      where name = init (splitOn ' ' x !! 1)
-                           uri = init (tail (splitOn ' ' x !! 2))
+                           uri = init (splitOn ' ' x !! 2)
