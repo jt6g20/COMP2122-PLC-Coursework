@@ -24,5 +24,8 @@ Rule.hi
 Rule.o
 SelectAttributes.hi
 SelectAttributes.o
+in1.txt
 in2.txt
-fooT.ttl
+in3.txt
+in4.txt
+in5.txt

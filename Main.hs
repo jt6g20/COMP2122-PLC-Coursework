@@ -22,27 +22,17 @@ main = do
     (fileName : _) <- getArgs
     stmtString <- readFile fileName
     let stmt = parseSQL $ alexScanTokens stmtString
-
-    let fileName = getFile stmt
-    let inputFiles = getFilePaths fileName
+    let inputFiles = queryFile stmt
     contents <- mapM readFile inputFiles
 
     let triples = inputsToTriples contents
 
-    print (evaluator stmt triples)
-    --writeFile (getOutFile stmt) (evaluate stmt)
+    if isOutFile stmt then writeFile (getOutFile stmt) (evaluator stmt triples) else print (evaluator stmt triples)
 
 -- Stmt (QueryCondition (Attributes Subj (Attributes Pred (AttributeObj Obj))) (File "foo") (ConditionAND (AttributeEq Subj (AttributeString "<http://www.cw.org/#problem2>")) (AttributeEq (AttributeObj Obj) (AttributeBoolean True))))
 
 -- Stmt (QueryCondition (Attributes Subj (Attributes Pred (AttributeObj Obj))) (File "foo") (ConditionOR (AttributeEq Pred (AttributeString "http://www.cw.org/problem3/#predicate1")) (ConditionOR (AttributeEq Pred (AttributeString 
 -- "http://www.cw.org/problem3/#predicate2")) (AttributeEq Pred (AttributeString "http://www.cw.org/problem3/#predicate3")))))
-
-getFile :: Stmt -> File
-getFile (Stmt (Query _ f)) = f
-getFile (StmtOutput (Query _ f) _) = f
-getFile (Stmt (QueryCondition _ f _)) = f
-getFile (StmtOutput (QueryCondition _ f _) _) = f
-
 
 queryFile :: Stmt -> [FilePath]
 queryFile (Stmt (Query _ f)) = getFilePaths f
@@ -54,9 +44,13 @@ getFilePaths :: File -> [FilePath]
 getFilePaths (File x) = ["Inputs/" ++ x ++ ".ttl"]
 getFilePaths (Files x y) = getFilePaths x ++ getFilePaths y
 
+isOutFile :: Stmt -> Bool
+isOutFile (StmtOutput _ _) = True
+isOutFile _ = False
+
 getOutFile :: Stmt -> String
-getOutFile (StmtOutput (Query {}) s) = s
-getOutFile (StmtOutput (QueryCondition {}) s) = s
+getOutFile (StmtOutput (Query {}) s) = s ++ ".ttl"
+getOutFile (StmtOutput (QueryCondition {}) s) = s ++ ".ttl"
 
 inputsToTriples :: [String] -> [Triple]
 inputsToTriples = foldr
@@ -112,7 +106,7 @@ predMatch s (_, x, _) = x == s
 objMatch :: String -> Triple -> Bool
 objMatch s (_, _, x) = x == s
 
-evaluator :: Stmt -> [Triple] -> [String]
+evaluator :: Stmt -> [Triple] -> String
 evaluator (Stmt q) ts = concatMap (\x -> join x ++ " .\n") (handleQuery q ts)
 evaluator (StmtOutput q s) ts = concatMap (\x -> join x ++ " .\n") (handleQuery q ts) --write to s
 
@@ -146,7 +140,7 @@ rule (Less x n) ts = error ("invalid attribute " ++ show x ++ " to compare '<' w
 rule (NumEq x@(AttributeObj Obj) n) ts = [t | t <- ts, (readMaybe (getAtt x t) :: Maybe Int) == Just n]
 rule (NumEq x n) ts = error ("invalid attribute " ++ show x ++" to compare '=' with " ++ show n)
 
-rule (AttributeEq x y) ts = [t | t <- ts, (getAtt x t) == (getAtt y t)]
+rule (AttributeEq x y) ts = [t | t <- ts, getAtt x t == getAtt y t]
 --    where rmvBrackets (AttributeString x) = init (tail x)
 --          rmvBrackets x = x
 rule (AttributeIn x y) ts = [t | t <- ts, getAtt x t `elem` evaluator y]
