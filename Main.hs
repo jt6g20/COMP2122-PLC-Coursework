@@ -16,18 +16,27 @@ import Bases
 import Prefixes
 import SelectAttributes
 
+{-SELECT FILES 1, 2
+SELECT FILE 3
+SELECT FILE 4, 5, 6
+[[1FP, 2FP], [3FP], [4FP, 5FP, 6FP]] = inputFiles
+[[1Str, 2Str], [3Str], [4Str, 5Str, 6Str]] = contents
+[12T, 3T, 456T] = triples
+[S1, S2, S3]-}
 main :: IO ()
 -- main = catch lexer handler
 main = do
     (fileName : _) <- getArgs
     stmtString <- readFile fileName
-    let stmt = parseSQL $ alexScanTokens stmtString
-    let inputFiles = queryFile stmt
-    contents <- mapM readFile inputFiles
 
-    let triples = inputsToTriples contents
+    let stmts = map (parseSQL . alexScanTokens) (lines stmtString)
+    let inputFiles = map queryFile stmts
+    contents <- mapM (mapM readFile) inputFiles
 
-    if isOutFile stmt then writeFile (getOutFile stmt) (evaluator stmt triples) else print (evaluator stmt triples)
+    let triples = map (inputsToTriples) contents
+
+    print (sortOut $ evalIt stmts triples)
+    --if isOutFile (last stmts) then writeFile (getOutFile (last stmts)) (sortOut (evalIt stmts triples)) else print (sortOut (evalIt stmts triples))
 
 -- Stmt (QueryCondition (Attributes Subj (Attributes Pred (AttributeObj Obj))) (File "foo") (ConditionAND (AttributeEq Subj (AttributeString "<http://www.cw.org/#problem2>")) (AttributeEq (AttributeObj Obj) (AttributeBoolean True))))
 
@@ -61,6 +70,27 @@ inputsToTriples = foldr
                     $ prefixes $ bases $ objLists $ predLists $ inputToList x)))
       []
 
+--sortOut :: [[String]] -> [String]
+sortOut xss = concatMap (\x -> join x ++ " .\n") (sortAtts (rmvDupl xss))
+
+sortAtts :: [[String]] -> [[String]]
+sortAtts (xs:xss) | length xs == 3 = sortAtt $ sortAtt $ sortAtt xss
+                  | length xs == 2 = sortAtt $ sortAtt xs
+                  | length xs == 1 = sortAtt xs
+                  | otherwise = error "invalid triple"
+
+sortAtt :: [[String]] -> [[String]]
+sortAtt = undefined
+
+rmvDupl :: Eq a => [[a]] -> [[a]]
+rmvDupl [] = []
+rmvDupl (xs:xss) | (allDupl 0 xs xss) = rmvDupl xss
+                 | otherwise = xs : rmvDupl xss
+
+allDupl :: Eq a => Int -> [a] -> [[a]] -> Bool
+allDupl n [] xss = True
+allDupl n (x:xs) xss = x `elem` (map (!!n) xss) && (allDupl (n+1) xs xss)
+
 -- lexer :: IO ()
 -- lexer = do
 --     (fileName : _) <- getArgs
@@ -78,11 +108,6 @@ onlyTriples xs = [a:as | (a:as) <- xs, a /= '@']
 
 inputToList :: String -> [String]
 inputToList s = [replace x | x <- lines s, x /= ""]
-
--- listToOutput :: [String] -> String
--- listToOutput [] = []
--- listToOutput (x:xs) = spaces x ++ " .\n" ++ listToOutput xs
---     where spaces x = 
 
 replace :: String -> String
 replace xs | Just xs <- stripPrefix "><" xs = "> <" ++ replace xs
@@ -106,9 +131,14 @@ predMatch s (_, x, _) = x == s
 objMatch :: String -> Triple -> Bool
 objMatch s (_, _, x) = x == s
 
-evaluator :: Stmt -> [Triple] -> String
-evaluator (Stmt q) ts = concatMap (\x -> join x ++ " .\n") (handleQuery q ts)
-evaluator (StmtOutput q s) ts = concatMap (\x -> join x ++ " .\n") (handleQuery q ts) --write to s
+evalIt :: [Stmt] -> [[Triple]] -> [[String]]
+evalIt [] _ = []
+evalIt _ [] = []
+evalIt (x:xs) (y:ys) = evaluator x y ++ evalIt xs ys
+
+evaluator :: Stmt -> [Triple] -> [[String]]
+evaluator (Stmt q) ts = handleQuery q ts
+evaluator (StmtOutput q s) ts = handleQuery q ts
 
 join :: [String] -> String
 join [x,y,z] | "<" `isPrefixOf` z = x ++ y ++ z
