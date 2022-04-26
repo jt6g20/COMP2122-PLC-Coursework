@@ -25,3 +25,4 @@ Rule.o
 SelectAttributes.hi
 SelectAttributes.o
 in2.txt
+fooT.ttl

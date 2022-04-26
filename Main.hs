@@ -22,16 +22,17 @@ main = do
     (fileName : _) <- getArgs
     stmtString <- readFile fileName
     let stmt = parseSQL $ alexScanTokens stmtString
-    --print (getRaw (getFile stmt))
 
     let fileName = getFile stmt
     let inputFiles = getFilePaths fileName
     contents <- mapM readFile inputFiles
 
     let triples = inputsToTriples contents
-    
-    print stmt--(evaluator stmt triples)
+
+    print (evaluator stmt triples)
     --writeFile (getOutFile stmt) (evaluate stmt)
+
+-- Stmt (QueryCondition (Attributes Subj (Attributes Pred (AttributeObj Obj))) (File "foo") (ConditionAND (AttributeEq Subj (AttributeString "<http://www.cw.org/#problem2>")) (AttributeEq (AttributeObj Obj) (AttributeBoolean True))))
 
 -- Stmt (QueryCondition (Attributes Subj (Attributes Pred (AttributeObj Obj))) (File "foo") (ConditionOR (AttributeEq Pred (AttributeString "http://www.cw.org/problem3/#predicate1")) (ConditionOR (AttributeEq Pred (AttributeString 
 -- "http://www.cw.org/problem3/#predicate2")) (AttributeEq Pred (AttributeString "http://www.cw.org/problem3/#predicate3")))))
@@ -66,13 +67,6 @@ inputsToTriples = foldr
                     $ prefixes $ bases $ objLists $ predLists $ inputToList x)))
       []
 
-subj :: Triple -> String
-subj (x, _, _) = x
-pred :: Triple -> String
-pred (_, x, _) = x
-obj :: Triple -> String
-obj (_, _, x) = x
-
 -- lexer :: IO ()
 -- lexer = do
 --     (fileName : _) <- getArgs
@@ -91,10 +85,10 @@ onlyTriples xs = [a:as | (a:as) <- xs, a /= '@']
 inputToList :: String -> [String]
 inputToList s = [replace x | x <- lines s, x /= ""]
 
-listToOutput :: [String] -> String
-listToOutput [] = []
-listToOutput (('@':x):xs) = listToOutput xs
-listToOutput (x:xs) = x ++ " .\n" ++ listToOutput xs
+-- listToOutput :: [String] -> String
+-- listToOutput [] = []
+-- listToOutput (x:xs) = spaces x ++ " .\n" ++ listToOutput xs
+--     where spaces x = 
 
 replace :: String -> String
 replace xs | Just xs <- stripPrefix "><" xs = "> <" ++ replace xs
@@ -119,8 +113,15 @@ objMatch :: String -> Triple -> Bool
 objMatch s (_, _, x) = x == s
 
 evaluator :: Stmt -> [Triple] -> [String]
-evaluator (Stmt q) ts = map concat (handleQuery q ts)
-evaluator (StmtOutput q s) ts = map concat (handleQuery q ts) --write to s
+evaluator (Stmt q) ts = concatMap (\x -> join x ++ " .\n") (handleQuery q ts)
+evaluator (StmtOutput q s) ts = concatMap (\x -> join x ++ " .\n") (handleQuery q ts) --write to s
+
+join :: [String] -> String
+join [x,y,z] | "<" `isPrefixOf` z = x ++ y ++ z
+             | otherwise = x ++ y ++ " " ++ z
+join [x,y] | "<" `isPrefixOf` y = x ++ y
+           | otherwise = x ++ " " ++ y
+join _ = error "out of scope"
 
 handleQuery :: Query -> [Triple] -> [[String]]
 handleQuery (QueryCondition a f c) ts = select a (rule c ts)
@@ -145,7 +146,9 @@ rule (Less x n) ts = error ("invalid attribute " ++ show x ++ " to compare '<' w
 rule (NumEq x@(AttributeObj Obj) n) ts = [t | t <- ts, (readMaybe (getAtt x t) :: Maybe Int) == Just n]
 rule (NumEq x n) ts = error ("invalid attribute " ++ show x ++" to compare '=' with " ++ show n)
 
-rule (AttributeEq x y) ts = [t | t <- ts, getAtt x t == getAtt y t]
+rule (AttributeEq x y) ts = [t | t <- ts, (getAtt x t) == (getAtt y t)]
+--    where rmvBrackets (AttributeString x) = init (tail x)
+--          rmvBrackets x = x
 rule (AttributeIn x y) ts = [t | t <- ts, getAtt x t `elem` evaluator y]
     where evaluator x = ["placeholder", "function"]
 
