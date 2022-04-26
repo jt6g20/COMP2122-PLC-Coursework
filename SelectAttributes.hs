@@ -24,22 +24,9 @@ select a t = [x | x <- xs, ":(" `notElem` x]
 -- listToTriple _ = ("_", "_", "_")
 
 selectTriple :: Attribute -> Triple -> [String]
-selectTriple (Attributes a as) t = getAtt a t : selectTriple as t
-selectTriple a t = [getAtt a t]
+selectTriple (Attributes a as) t = getAttS a t : selectTriple as t
+selectTriple a t = [getAttS a t]
 
-{-tripleIsolate :: Attribute -> Triple -> String
-tripleIsolate Subj t = subjLookup t
-tripleIsolate Pred t = predLookup t
-tripleIsolate (AttributeObj Obj) t = objLookup t
-tripleIsolate (AttributeObj (ObjAdd i)) t | num == Nothing = ":("
-                                          | otherwise = show $ (maybeIntToInt num) + i
-    where num = objNumToInt $ objLookup t
-tripleIsolate (AttributeString s) _ = s
-tripleIsolate (AttributeBoolean b) _ = show b
-
-objNumToInt :: String -> Maybe Int
-objNumToInt (x:xs) | x == '+' = readMaybe xs
-objNumToInt s = readMaybe s --what does this do
-
-maybeIntToInt :: Maybe Int -> Int
-maybeIntToInt (Just i) = i-}
+getAttS :: Attribute -> Triple -> String
+getAttS (AttributeString s) _ = "<" ++ s ++ ">"
+getAttS x t = getAtt x t
