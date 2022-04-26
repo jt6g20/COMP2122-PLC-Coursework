@@ -13,14 +13,15 @@ predLookup (_, x, _) = x
 objLookup :: Triple -> String
 objLookup (_, _, x) = x
 
-select :: Attribute -> [Triple] -> [Triple]
-select a = map (listToTriple . selectTriple a)
+select :: Attribute -> [Triple] -> [[String]]
+select a t = [x | x <- xs, ":(" `notElem` x]
+    where xs = map (selectTriple a) t
 
-listToTriple :: [String] -> Triple
-listToTriple (x:y:z:_) = (x,y,z)
-listToTriple [x, y] = (x,y,"_")
-listToTriple [x] = (x,"_","_")
-listToTriple _ = ("_", "_", "_")
+-- listToTriple :: [String] -> Triple
+-- listToTriple (x:y:z:_) = (x,y,z)
+-- listToTriple [x, y] = (x,y,"_")
+-- listToTriple [x] = (x,"_","_")
+-- listToTriple _ = ("_", "_", "_")
 
 selectTriple :: Attribute -> Triple -> [String]
 selectTriple (Attributes a as) t = tripleIsolate a t : selectTriple as t
