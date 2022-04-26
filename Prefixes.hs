@@ -8,10 +8,9 @@ prefixes :: [String] -> [String]
 prefixes x = prefixIt x (buildPrefixes x)
 
 --maps the rewriting function to each subj, pred, obj for lines not starting with @
---prefixIt :: [String] -> [(String, String)] -> [String]
---prefixIt x ps = ps
+prefixIt :: [String] -> [(String, String)] -> [String]
 prefixIt [] ps = []
-prefixIt (('@':'p':x):xs) ps = ('@':'p':x) : prefixIt xs ps
+prefixIt (a@('@':'p':x):xs) ps = a : prefixIt xs ps
 prefixIt (x:xs) ps = unwords (mapp rmvPrefix (take 3 (splitOn ' ' x)) ps) : prefixIt xs ps
 
 --if string isn't already URI or base URI reference,

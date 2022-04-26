@@ -1,6 +1,5 @@
 module Rule where
 import Grammar
---import Main
 import Utilities
 import Text.Read
 import Data.Maybe

@@ -1,7 +1,11 @@
+module Main where
+
 import Tokens
 import System.IO
 import Data.List
 import Data.Char
+import Data.Maybe
+import Text.Read
 import Grammar
 import System.Environment
 import Control.Exception
@@ -11,7 +15,6 @@ import ObjectLists
 import Bases
 import Prefixes
 import SelectAttributes
-import Rule
 
 main :: IO ()
 -- main = catch lexer handler
@@ -19,18 +22,26 @@ main = do
     (fileName : _) <- getArgs
     stmtString <- readFile fileName
     let stmt = parseSQL $ alexScanTokens stmtString
+    --print (getRaw (getFile stmt))
 
-    let inputFiles = queryFile stmt
+    let fileName = getFile stmt
+    let inputFiles = getFilePaths fileName
     contents <- mapM readFile inputFiles
 
     let triples = inputsToTriples contents
-    print triples
-
---evaluator (Stmt q) = evaluator q
---evaluator (StmtOutput q s) = evaluator q
+    
+    print stmt--(evaluator stmt triples)
+    --writeFile (getOutFile stmt) (evaluate stmt)
 
 -- Stmt (QueryCondition (Attributes Subj (Attributes Pred (AttributeObj Obj))) (File "foo") (ConditionOR (AttributeEq Pred (AttributeString "http://www.cw.org/problem3/#predicate1")) (ConditionOR (AttributeEq Pred (AttributeString 
 -- "http://www.cw.org/problem3/#predicate2")) (AttributeEq Pred (AttributeString "http://www.cw.org/problem3/#predicate3")))))
+
+getFile :: Stmt -> File
+getFile (Stmt (Query _ f)) = f
+getFile (StmtOutput (Query _ f) _) = f
+getFile (Stmt (QueryCondition _ f _)) = f
+getFile (StmtOutput (QueryCondition _ f _) _) = f
+
 
 queryFile :: Stmt -> [FilePath]
 queryFile (Stmt (Query _ f)) = getFilePaths f
@@ -41,6 +52,10 @@ queryFile (StmtOutput (QueryCondition _ f _) _) = getFilePaths f
 getFilePaths :: File -> [FilePath]
 getFilePaths (File x) = ["Inputs/" ++ x ++ ".ttl"]
 getFilePaths (Files x y) = getFilePaths x ++ getFilePaths y
+
+getOutFile :: Stmt -> String
+getOutFile (StmtOutput (Query {}) s) = s
+getOutFile (StmtOutput (QueryCondition {}) s) = s
 
 inputsToTriples :: [String] -> [Triple]
 inputsToTriples = foldr
@@ -103,9 +118,37 @@ predMatch s (_, x, _) = x == s
 objMatch :: String -> Triple -> Bool
 objMatch s (_, _, x) = x == s
 
-evaluator :: Query -> [Triple]
-evaluator (QueryCondition a f c) = []
---evaluator (QueryCondition a f c) = select a (rule c f)
+evaluator :: Stmt -> [Triple] -> [String]
+evaluator (Stmt q) ts = map concat (handleQuery q ts)
+evaluator (StmtOutput q s) ts = map concat (handleQuery q ts) --write to s
+
+handleQuery :: Query -> [Triple] -> [[String]]
+handleQuery (QueryCondition a f c) ts = select a (rule c ts)
+handleQuery (Query a f) ts = select a ts
+
+--WHERE clause: uses list comprehension to filter triples with given conditions 
+rule :: Condition -> [Triple] -> [Triple]
+rule (ConditionAND x y) ts = rule x ts `intersect` rule y ts
+rule (ConditionOR x y) ts = rule x ts `union` rule y ts
+
+--checks whether object attribute is integer before comparison
+rule (Greater x@(AttributeObj Obj) n) ts = [t | t <- ts, (readMaybe (getAtt x t) :: Maybe Int) > Just n]
+--only Obj can be Int
+rule (Greater x n) ts = error ("invalid attribute " ++ show x ++ " to compare '>' with " ++ show n)
+
+--slightly different implementation to Greater as Maybe type declares Nothing < Just n = True
+rule (Less x@(AttributeObj Obj) n) ts = [t | t <- ts, less (readMaybe (getAtt x t) :: Maybe Int) n]
+    where less x n | isJust x = x < Just n
+                   | otherwise = False -- Monad??
+rule (Less x n) ts = error ("invalid attribute " ++ show x ++ " to compare '<' with " ++ show n)
+
+rule (NumEq x@(AttributeObj Obj) n) ts = [t | t <- ts, (readMaybe (getAtt x t) :: Maybe Int) == Just n]
+rule (NumEq x n) ts = error ("invalid attribute " ++ show x ++" to compare '=' with " ++ show n)
+
+rule (AttributeEq x y) ts = [t | t <- ts, getAtt x t == getAtt y t]
+rule (AttributeIn x y) ts = [t | t <- ts, getAtt x t `elem` evaluator y]
+    where evaluator x = ["placeholder", "function"]
+
 
 {-
 data Stmt = Stmt Query

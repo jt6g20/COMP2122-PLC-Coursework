@@ -1,5 +1,9 @@
 module Utilities where
+
+import Grammar
 import Data.List
+import Data.Maybe
+import Text.Read
 
 type Triple = (String, String, String)
 
@@ -11,3 +15,19 @@ splitOn c s = map (\a -> [x | x <- a, x /= c]) $ groupBy (\a b -> b /= c) s
 mapp :: (a -> b -> a) -> [a] -> b -> [a]
 mapp _ []     ys = []
 mapp f (x:xs) ys = f x ys : mapp f xs ys
+
+--gets specified attribute from triple, and just returns constant as is
+getAtt :: Attribute -> Triple -> String
+getAtt Subj (x, _, _) = x
+getAtt Pred (_, x, _) = x
+getAtt (AttributeObj Obj) (_, _, x) = x
+getAtt (AttributeObj (ObjAdd i)) (_, _, x) | isNothing num = ":("
+                                           | otherwise = show (fromJust num + i)
+    where num = readAdd x
+          readAdd ('+':xs) = readMaybe xs
+          readAdd xs = readMaybe xs
+getAtt (AttributeString s) x = s
+getAtt (AttributeBoolean True) x = "true" --ttl uses lowercase for booleans
+getAtt (AttributeBoolean False) x = "false"
+getAtt _ _ = error "invalid attribute" --Attributes constructor not allowed
+
