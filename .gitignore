@@ -24,6 +24,8 @@ Rule.hi
 Rule.o
 SelectAttributes.hi
 SelectAttributes.o
+SortOut.hi
+SortOut.o
 in1.txt
 in2.txt
 in3.txt
