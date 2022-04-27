@@ -27,9 +27,9 @@ sortOnAtt n xss@(xs:_) | n == length xs - 1 = xss
 takeOnAtt :: Ord a => Int -> [[a]] -> [[a]]
 takeOnAtt n (xs:xss) = sortBy (compare `on` (!!(n+1))) (xs : takeWhile (\x -> take (n+1) x == take (n+1) xs) xss)
 
-rmvDupl :: Eq a => [[a]] -> [[a]]
+rmvDupl :: [[String]] -> [[String]]
 rmvDupl [] = []
-rmvDupl (xs:xss) | (allDupl 0 xs xss) = rmvDupl xss
+rmvDupl (xs:xss) | xs `elem` xss = rmvDupl xss
                  | otherwise = xs : rmvDupl xss
 
 allDupl :: Eq a => Int -> [a] -> [[a]] -> Bool
