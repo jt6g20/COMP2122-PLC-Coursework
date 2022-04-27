@@ -78,22 +78,25 @@ queryFile (StmtOutput (Query _ f) _) = getFilePaths f
 queryFile (Stmt (QueryCondition _ f _)) = getFilePaths f
 queryFile (StmtOutput (QueryCondition _ f _) _) = getFilePaths f
 
+{-
 stmtFiles :: Stmt -> [FilePath]
 stmtFiles (Stmt (Query _ f)) = getFilePaths f
 stmtFiles (StmtOutput (Query _ f) _) = getFilePaths f
 stmtFiles (Stmt (QueryCondition _ f c)) = getFilePaths f ++ concatMap getFilePaths (getInFiles c)
 stmtFiles (StmtOutput (QueryCondition _ f c) _) = getFilePaths f ++ concatMap getFilePaths (getInFiles c)
+-}
 
 --Converts Files to list of FilePaths in Inputs folder
 getFilePaths :: File -> [FilePath]
 getFilePaths (File x) = ["Inputs/" ++ x ++ ".ttl"]
 getFilePaths (Files x y) = getFilePaths x ++ getFilePaths y
 
---Gets Files mentioned in AttributeIn
+{-Gets Files mentioned in AttributeIn
 getInFiles :: Condition -> [File]
 getInFiles (AttributeIn a (Query _ f)) = [f]
 getInFiles (AttributeIn a (QueryCondition _ f c)) = f : getInFiles c
 getInFiles c = []
+-}
 
 isOutFile :: Stmt -> Bool
 isOutFile (StmtOutput _ _) = True

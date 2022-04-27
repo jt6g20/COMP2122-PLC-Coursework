@@ -20,7 +20,8 @@ mapp f (x:xs) ys = f x ys : mapp f xs ys
 getAtt :: Attribute -> Triple -> String
 getAtt Subj (x, _, _) = x
 getAtt Pred (_, x, _) = x
-getAtt (AttributeObj Obj) (_, _, x) = x
+getAtt (AttributeObj Obj) (_, _, x) | "+" `isPrefixOf` x = tail x
+      | otherwise = x
 getAtt (AttributeObj (ObjAdd i)) (_, _, x) | isNothing num = ":("
                                            | otherwise = show (fromJust num + i)
     where num = readAdd x

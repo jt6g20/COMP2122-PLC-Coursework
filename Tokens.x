@@ -30,7 +30,7 @@ tokens :-
     "<Pred>" { \p s -> TokenPred p }
     "<Obj>" { \p s -> TokenObj p }
 
-    "-"? $digit+            { \p s -> TokenInt p (read s) }
+    [\- \+]? $digit+            { \p s -> TokenInt p (read s) }
     [$alpha $digit $symbols]+   { \p s -> TokenString p s }
 
 { 
