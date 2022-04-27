@@ -15,6 +15,7 @@ import ObjectLists
 import Bases
 import Prefixes
 import SelectAttributes
+import SortOut
 
 {-SELECT FILES 1, 2
 SELECT FILE 3
@@ -30,28 +31,34 @@ main = do
     stmtString <- readFile fileName
 
     let stmts = map (parseSQL . alexScanTokens) (lines stmtString)
-    let inputFiles = map queryFile stmts
+    let inputFiles = map stmtFiles stmts
     contents <- mapM (mapM readFile) inputFiles
 
-    let triples = map (inputsToTriples) contents
+    let triples = map inputsToTriples contents
 
-    print (sortOut $ evalIt stmts triples)
+    print inputFiles 
+    print triples
     --if isOutFile (last stmts) then writeFile (getOutFile (last stmts)) (sortOut (evalIt stmts triples)) else print (sortOut (evalIt stmts triples))
+    
+    --Using this to write to a file without sorting, just to test the contents
+    writeFile "test.txt" (concatMap (\x -> SortOut.join x ++ " .\n") (evalIt stmts triples))
 
--- Stmt (QueryCondition (Attributes Subj (Attributes Pred (AttributeObj Obj))) (File "foo") (ConditionAND (AttributeEq Subj (AttributeString "<http://www.cw.org/#problem2>")) (AttributeEq (AttributeObj Obj) (AttributeBoolean True))))
+stmtFiles :: Stmt -> [FilePath]
+stmtFiles (Stmt (Query _ f)) = getFilePaths f
+stmtFiles (StmtOutput (Query _ f) _) = getFilePaths f
+stmtFiles (Stmt (QueryCondition _ f c)) = getFilePaths f ++ concatMap getFilePaths (getInFiles c)
+stmtFiles (StmtOutput (QueryCondition _ f c) _) = getFilePaths f ++ concatMap getFilePaths (getInFiles c)
 
--- Stmt (QueryCondition (Attributes Subj (Attributes Pred (AttributeObj Obj))) (File "foo") (ConditionOR (AttributeEq Pred (AttributeString "http://www.cw.org/problem3/#predicate1")) (ConditionOR (AttributeEq Pred (AttributeString 
--- "http://www.cw.org/problem3/#predicate2")) (AttributeEq Pred (AttributeString "http://www.cw.org/problem3/#predicate3")))))
-
-queryFile :: Stmt -> [FilePath]
-queryFile (Stmt (Query _ f)) = getFilePaths f
-queryFile (StmtOutput (Query _ f) _) = getFilePaths f
-queryFile (Stmt (QueryCondition _ f _)) = getFilePaths f
-queryFile (StmtOutput (QueryCondition _ f _) _) = getFilePaths f
-
+--Converts Files to list of FilePaths in Inputs folder
 getFilePaths :: File -> [FilePath]
 getFilePaths (File x) = ["Inputs/" ++ x ++ ".ttl"]
 getFilePaths (Files x y) = getFilePaths x ++ getFilePaths y
+
+--Gets Files mentioned in AttributeIn
+getInFiles :: Condition -> [File]
+getInFiles (AttributeIn a (Query _ f)) = [f]
+getInFiles (AttributeIn a (QueryCondition _ f c)) = f : getInFiles c
+getInFiles c = []
 
 isOutFile :: Stmt -> Bool
 isOutFile (StmtOutput _ _) = True
@@ -70,39 +77,6 @@ inputsToTriples = foldr
                     $ prefixes $ bases $ objLists $ predLists $ inputToList x)))
       []
 
---sortOut :: [[String]] -> [String]
-sortOut xss = concatMap (\x -> join x ++ " .\n") (sortAtts (rmvDupl xss))
-
-sortAtts :: [[String]] -> [[String]]
-sortAtts (xs:xss) | length xs == 3 = sortAtt $ sortAtt $ sortAtt xss
-                  | length xs == 2 = sortAtt $ sortAtt xs
-                  | length xs == 1 = sortAtt xs
-                  | otherwise = error "invalid triple"
-
-sortAtt :: [[String]] -> [[String]]
-sortAtt = undefined
-
-rmvDupl :: Eq a => [[a]] -> [[a]]
-rmvDupl [] = []
-rmvDupl (xs:xss) | (allDupl 0 xs xss) = rmvDupl xss
-                 | otherwise = xs : rmvDupl xss
-
-allDupl :: Eq a => Int -> [a] -> [[a]] -> Bool
-allDupl n [] xss = True
-allDupl n (x:xs) xss = x `elem` (map (!!n) xss) && (allDupl (n+1) xs xss)
-
--- lexer :: IO ()
--- lexer = do
---     (fileName : _) <- getArgs
---     contents <- readFile fileName
---     -- putStrLn $ show $ parseSQL $ alexScanTokens contents
---     putStrLn $ show $ parseSQL $ alexScanTokens contents
-
--- handler :: ErrorCall -> IO ()
--- handler e = do
---     let error = show e
---     putStrLn ("Error " ++ error)
-
 onlyTriples :: [String] -> [String]
 onlyTriples xs = [a:as | (a:as) <- xs, a /= '@']
 
@@ -113,7 +87,6 @@ replace :: String -> String
 replace xs | Just xs <- stripPrefix "><" xs = "> <" ++ replace xs
 replace (x:xs) = x : replace xs
 replace [] = []
-
 
 tripleListToTriple :: [String] -> Triple
 tripleListToTriple xs = (head xs, xs!!1, xs!!2)
