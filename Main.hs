@@ -40,19 +40,11 @@ main = do
     triplePairs <- mapM getTriples stmtPairs
 
     -- print (evalIt stmts triples)
-    print (triplePairs)
     print (evalIt stmts triplePairs)
-    let inputFiles = map stmtFiles stmts
-    contents <- mapM (mapM readFile) inputFiles
 
-    let triples = map inputsToTriples contents
-
-    print inputFiles
-    print triples
-    --if isOutFile (last stmts) then writeFile (getOutFile (last stmts)) (sortOut (evalIt stmts triples)) else print (sortOut (evalIt stmts triples))
-
-    --Using this to write to a file without sorting, just to test the contents
-    writeFile "test.txt" (concatMap (\x -> SortOut.join x ++ " .\n") (evalIt stmts triples))
+    if isOutFile (last stmts) then 
+        writeFile (getOutFile (last stmts)) (sortOut (evalIt stmts triplePairs)) 
+        else print (sortOut (evalIt stmts triplePairs))
 
 -- Stmt (QueryCondition (Attributes Subj (Attributes Pred (AttributeObj Obj))) (File "foo") (ConditionAND (AttributeEq Subj (AttributeString "<http://www.cw.org/#problem2>")) (AttributeEq (AttributeObj Obj) (AttributeBoolean True))))
 
@@ -65,7 +57,7 @@ getTriples stmts = do
     let inputFiles = map queryFile stmts
     contents <- mapM (mapM readFile) inputFiles
 
-    let triples = map (inputsToTriples) contents
+    let triples = map inputsToTriples contents
     return triples
 
 --gets the inner statement
@@ -120,38 +112,6 @@ inputsToTriples = foldr
                     $ prefixes $ bases $ objLists $ predLists $ inputToList x)))
       []
 
---sortOut :: [[String]] -> [String]
--- sortOut xss = concatMap (\x -> join x ++ " .\n") (sortAtts (rmvDupl xss))
-
--- sortAtts :: [[String]] -> [[String]]
--- sortAtts (xs:xss) | length xs == 3 = sortAtt $ sortAtt $ sortAtt xss
---                   | length xs == 2 = sortAtt $ sortAtt xs
---                   | length xs == 1 = sortAtt xs
---                   | otherwise = error "invalid triple"
-
-sortAtt :: [[String]] -> [[String]]
-sortAtt = undefined
-
-rmvDupl :: Eq a => [[a]] -> [[a]]
-rmvDupl [] = []
-rmvDupl (xs:xss) | (allDupl 0 xs xss) = rmvDupl xss
-                 | otherwise = xs : rmvDupl xss
-
-allDupl :: Eq a => Int -> [a] -> [[a]] -> Bool
-allDupl n [] xss = True
-allDupl n (x:xs) xss = x `elem` (map (!!n) xss) && (allDupl (n+1) xs xss)
-
--- lexer :: IO ()
--- lexer = do
---     (fileName : _) <- getArgs
---     contents <- readFile fileName
---     -- putStrLn $ show $ parseSQL $ alexScanTokens contents
---     putStrLn $ show $ parseSQL $ alexScanTokens contents
-
--- handler :: ErrorCall -> IO ()
--- handler e = do
---     let error = show e
---     putStrLn ("Error " ++ error)
 
 onlyTriples :: [String] -> [String]
 onlyTriples xs = [a:as | (a:as) <- xs, a /= '@']

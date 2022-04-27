@@ -28,5 +28,5 @@ selectTriple (Attributes a as) t = getAttS a t : selectTriple as t
 selectTriple a t = [getAttS a t]
 
 getAttS :: Attribute -> Triple -> String
-getAttS (AttributeString s) _ = "<" ++ s ++ ">"
+getAttS (AttributeString s) _ =  s 
 getAttS x t = getAtt x t
