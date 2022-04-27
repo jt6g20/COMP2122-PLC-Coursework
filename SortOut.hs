@@ -31,7 +31,3 @@ rmvDupl :: [[String]] -> [[String]]
 rmvDupl [] = []
 rmvDupl (xs:xss) | xs `elem` xss = rmvDupl xss
                  | otherwise = xs : rmvDupl xss
-
-allDupl :: Eq a => Int -> [a] -> [[a]] -> Bool
-allDupl n [] xss = True
-allDupl n (x:xs) xss = x `elem` (map (!!n) xss) && (allDupl (n+1) xs xss)
