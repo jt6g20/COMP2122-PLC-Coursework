@@ -30,18 +30,44 @@ main = do
     stmtString <- readFile fileName
 
     let stmts = map (parseSQL . alexScanTokens) (lines stmtString)
-    let inputFiles = map queryFile stmts
-    contents <- mapM (mapM readFile) inputFiles
 
-    let triples = map (inputsToTriples) contents
+    triples <- getTriples stmts
 
-    print (sortOut $ evalIt stmts triples)
+    -- lists of statements and, if specified, inner statement
+    let stmtPairs = [stmtToInnerPair x | x <- stmts]
+
+    triplePairs <- mapM getTriples stmtPairs
+
+    -- print (evalIt stmts triples)
+    print (triplePairs)
+    print (evalIt stmts triplePairs)
     --if isOutFile (last stmts) then writeFile (getOutFile (last stmts)) (sortOut (evalIt stmts triples)) else print (sortOut (evalIt stmts triples))
 
 -- Stmt (QueryCondition (Attributes Subj (Attributes Pred (AttributeObj Obj))) (File "foo") (ConditionAND (AttributeEq Subj (AttributeString "<http://www.cw.org/#problem2>")) (AttributeEq (AttributeObj Obj) (AttributeBoolean True))))
 
 -- Stmt (QueryCondition (Attributes Subj (Attributes Pred (AttributeObj Obj))) (File "foo") (ConditionOR (AttributeEq Pred (AttributeString "http://www.cw.org/problem3/#predicate1")) (ConditionOR (AttributeEq Pred (AttributeString 
 -- "http://www.cw.org/problem3/#predicate2")) (AttributeEq Pred (AttributeString "http://www.cw.org/problem3/#predicate3")))))
+
+--takes a list of statements and returns and IO object of a list of lists of their triples
+getTriples :: [Stmt] -> IO [[Triple]]
+getTriples stmts = do
+    let inputFiles = map queryFile stmts
+    contents <- mapM (mapM readFile) inputFiles
+
+    let triples = map (inputsToTriples) contents
+    return triples
+
+--gets the inner statement
+getInStmt :: Stmt -> Maybe Stmt
+getInStmt (Stmt (QueryCondition _ _ (AttributeIn _ q))) = Just $ Stmt q
+getInStmt (StmtOutput (QueryCondition _ _ (AttributeIn _ q)) _) = Just $ Stmt q
+getInStmt _ = Nothing
+
+--takes a statement and returns a list of that statement and, if there, it's IN statement
+stmtToInnerPair :: Stmt -> [Stmt]
+stmtToInnerPair s | isNothing (getInStmt s) = [s]
+                  | otherwise = [s, fromJust $ getInStmt s]
+
 
 queryFile :: Stmt -> [FilePath]
 queryFile (Stmt (Query _ f)) = getFilePaths f
@@ -71,13 +97,13 @@ inputsToTriples = foldr
       []
 
 --sortOut :: [[String]] -> [String]
-sortOut xss = concatMap (\x -> join x ++ " .\n") (sortAtts (rmvDupl xss))
+-- sortOut xss = concatMap (\x -> join x ++ " .\n") (sortAtts (rmvDupl xss))
 
-sortAtts :: [[String]] -> [[String]]
-sortAtts (xs:xss) | length xs == 3 = sortAtt $ sortAtt $ sortAtt xss
-                  | length xs == 2 = sortAtt $ sortAtt xs
-                  | length xs == 1 = sortAtt xs
-                  | otherwise = error "invalid triple"
+-- sortAtts :: [[String]] -> [[String]]
+-- sortAtts (xs:xss) | length xs == 3 = sortAtt $ sortAtt $ sortAtt xss
+--                   | length xs == 2 = sortAtt $ sortAtt xs
+--                   | length xs == 1 = sortAtt xs
+--                   | otherwise = error "invalid triple"
 
 sortAtt :: [[String]] -> [[String]]
 sortAtt = undefined
@@ -131,12 +157,14 @@ predMatch s (_, x, _) = x == s
 objMatch :: String -> Triple -> Bool
 objMatch s (_, _, x) = x == s
 
-evalIt :: [Stmt] -> [[Triple]] -> [[String]]
+--takes statments and their triples in two lists
+evalIt :: [Stmt] -> [[[Triple]]] -> [[String]]
 evalIt [] _ = []
 evalIt _ [] = []
 evalIt (x:xs) (y:ys) = evaluator x y ++ evalIt xs ys
 
-evaluator :: Stmt -> [Triple] -> [[String]]
+--takes a statement and the triples in it's file and applies select and conditions
+evaluator :: Stmt -> [[Triple]] -> [[String]]
 evaluator (Stmt q) ts = handleQuery q ts
 evaluator (StmtOutput q s) ts = handleQuery q ts
 
@@ -147,34 +175,34 @@ join [x,y] | "<" `isPrefixOf` y = x ++ y
            | otherwise = x ++ " " ++ y
 join _ = error "out of scope"
 
-handleQuery :: Query -> [Triple] -> [[String]]
+handleQuery :: Query -> [[Triple]] -> [[String]]
 handleQuery (QueryCondition a f c) ts = select a (rule c ts)
-handleQuery (Query a f) ts = select a ts
+handleQuery (Query a f) ts = select a (head ts)
 
 --WHERE clause: uses list comprehension to filter triples with given conditions 
-rule :: Condition -> [Triple] -> [Triple]
+rule :: Condition -> [[Triple]] -> [Triple]
 rule (ConditionAND x y) ts = rule x ts `intersect` rule y ts
 rule (ConditionOR x y) ts = rule x ts `union` rule y ts
 
 --checks whether object attribute is integer before comparison
-rule (Greater x@(AttributeObj Obj) n) ts = [t | t <- ts, (readMaybe (getAtt x t) :: Maybe Int) > Just n]
+rule (Greater x@(AttributeObj Obj) n) ts = [t | t <- head ts, (readMaybe (getAtt x t) :: Maybe Int) > Just n]
 --only Obj can be Int
 rule (Greater x n) ts = error ("invalid attribute " ++ show x ++ " to compare '>' with " ++ show n)
 
 --slightly different implementation to Greater as Maybe type declares Nothing < Just n = True
-rule (Less x@(AttributeObj Obj) n) ts = [t | t <- ts, less (readMaybe (getAtt x t) :: Maybe Int) n]
+rule (Less x@(AttributeObj Obj) n) ts = [t | t <- head ts, less (readMaybe (getAtt x t) :: Maybe Int) n]
     where less x n | isJust x = x < Just n
                    | otherwise = False -- Monad??
 rule (Less x n) ts = error ("invalid attribute " ++ show x ++ " to compare '<' with " ++ show n)
 
-rule (NumEq x@(AttributeObj Obj) n) ts = [t | t <- ts, (readMaybe (getAtt x t) :: Maybe Int) == Just n]
+rule (NumEq x@(AttributeObj Obj) n) ts = [t | t <- head ts, (readMaybe (getAtt x t) :: Maybe Int) == Just n]
 rule (NumEq x n) ts = error ("invalid attribute " ++ show x ++" to compare '=' with " ++ show n)
 
-rule (AttributeEq x y) ts = [t | t <- ts, getAtt x t == getAtt y t]
+rule (AttributeEq x y) ts = [t | t <- head ts, getAtt x t == getAtt y t]
 --    where rmvBrackets (AttributeString x) = init (tail x)
 --          rmvBrackets x = x
-rule (AttributeIn x y) ts = [t | t <- ts, getAtt x t `elem` evaluator y]
-    where evaluator x = ["placeholder", "function"]
+rule (AttributeIn x y) ts = [t | t <- head ts, getAtt x t `elem` (evaluator (Stmt y) ts!!1)]
+
 
 
 {-
@@ -207,3 +235,5 @@ data Obj = Obj
          deriving Show
 }
 -}
+
+[[[],[]],[[],[]]]
