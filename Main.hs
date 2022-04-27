@@ -47,10 +47,10 @@ main = do
 
     let triples = map inputsToTriples contents
 
-    print inputFiles 
+    print inputFiles
     print triples
     --if isOutFile (last stmts) then writeFile (getOutFile (last stmts)) (sortOut (evalIt stmts triples)) else print (sortOut (evalIt stmts triples))
-    
+
     --Using this to write to a file without sorting, just to test the contents
     writeFile "test.txt" (concatMap (\x -> SortOut.join x ++ " .\n") (evalIt stmts triples))
 
@@ -224,7 +224,7 @@ rule (NumEq x n) ts = error ("invalid attribute " ++ show x ++" to compare '=' w
 rule (AttributeEq x y) ts = [t | t <- head ts, getAtt x t == getAtt y t]
 --    where rmvBrackets (AttributeString x) = init (tail x)
 --          rmvBrackets x = x
-rule (AttributeIn x y) ts = [t | t <- head ts, getAtt x t `elem` (evaluator (Stmt y) ts!!1)]
+rule (AttributeIn x y) ts = [t | t <- head ts, getAtt x t `elem` concat (evaluator (Stmt y) [ts!!1])]
 
 
 
