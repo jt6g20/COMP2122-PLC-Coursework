@@ -1,0 +1,1 @@
+SELECT <Subj> <Pred> <Obj> FROM foo WHERE <Pred> = <http://www.cw.org/problem3/#predicate1> OR <Pred> = <http://www.cw.org/problem3/#predicate2> OR <Pred> = <http://www.cw.org/problem3/#predicate3> OUTPUT out3

@@ -17,13 +17,6 @@ import Prefixes
 import SelectAttributes
 import SortOut
 
-{-SELECT FILES 1, 2
-SELECT FILE 3
-SELECT FILE 4, 5, 6
-[[1FP, 2FP], [3FP], [4FP, 5FP, 6FP]] = inputFiles
-[[1Str, 2Str], [3Str], [4Str, 5Str, 6Str]] = contents
-[12T, 3T, 456T] = triples
-[S1, S2, S3]-}
 main :: IO ()
 -- main = catch lexer handler
 main = do
@@ -31,7 +24,7 @@ main = do
     stmtString <- readFile fileName
 
     let stmts = map (parseSQL . alexScanTokens) (lines stmtString)
-
+    
     triples <- getTriples stmts
 
     -- lists of statements and, if specified, inner statement
@@ -39,17 +32,12 @@ main = do
 
     triplePairs <- mapM getTriples stmtPairs
 
-    -- print (evalIt stmts triples)
-    print (evalIt stmts triplePairs)
+    putStrLn $ sortOut $ evalIt stmts triplePairs
 
     if isOutFile (last stmts) then 
         writeFile (getOutFile (last stmts)) (sortOut (evalIt stmts triplePairs)) 
         else print (sortOut (evalIt stmts triplePairs))
 
--- Stmt (QueryCondition (Attributes Subj (Attributes Pred (AttributeObj Obj))) (File "foo") (ConditionAND (AttributeEq Subj (AttributeString "<http://www.cw.org/#problem2>")) (AttributeEq (AttributeObj Obj) (AttributeBoolean True))))
-
--- Stmt (QueryCondition (Attributes Subj (Attributes Pred (AttributeObj Obj))) (File "foo") (ConditionOR (AttributeEq Pred (AttributeString "http://www.cw.org/problem3/#predicate1")) (ConditionOR (AttributeEq Pred (AttributeString 
--- "http://www.cw.org/problem3/#predicate2")) (AttributeEq Pred (AttributeString "http://www.cw.org/problem3/#predicate3")))))
 
 --takes a list of statements and returns and IO object of a list of lists of their triples
 getTriples :: [Stmt] -> IO [[Triple]]
@@ -71,32 +59,16 @@ stmtToInnerPair :: Stmt -> [Stmt]
 stmtToInnerPair s | isNothing (getInStmt s) = [s]
                   | otherwise = [s, fromJust $ getInStmt s]
 
-
 queryFile :: Stmt -> [FilePath]
 queryFile (Stmt (Query _ f)) = getFilePaths f
 queryFile (StmtOutput (Query _ f) _) = getFilePaths f
 queryFile (Stmt (QueryCondition _ f _)) = getFilePaths f
 queryFile (StmtOutput (QueryCondition _ f _) _) = getFilePaths f
 
-{-
-stmtFiles :: Stmt -> [FilePath]
-stmtFiles (Stmt (Query _ f)) = getFilePaths f
-stmtFiles (StmtOutput (Query _ f) _) = getFilePaths f
-stmtFiles (Stmt (QueryCondition _ f c)) = getFilePaths f ++ concatMap getFilePaths (getInFiles c)
-stmtFiles (StmtOutput (QueryCondition _ f c) _) = getFilePaths f ++ concatMap getFilePaths (getInFiles c)
--}
-
 --Converts Files to list of FilePaths in Inputs folder
 getFilePaths :: File -> [FilePath]
 getFilePaths (File x) = ["Inputs/" ++ x ++ ".ttl"]
 getFilePaths (Files x y) = getFilePaths x ++ getFilePaths y
-
-{-Gets Files mentioned in AttributeIn
-getInFiles :: Condition -> [File]
-getInFiles (AttributeIn a (Query _ f)) = [f]
-getInFiles (AttributeIn a (QueryCondition _ f c)) = f : getInFiles c
-getInFiles c = []
--}
 
 isOutFile :: Stmt -> Bool
 isOutFile (StmtOutput _ _) = True
@@ -114,7 +86,6 @@ inputsToTriples = foldr
                  (onlyTriples
                     $ prefixes $ bases $ objLists $ predLists $ inputToList x)))
       []
-
 
 onlyTriples :: [String] -> [String]
 onlyTriples xs = [a:as | (a:as) <- xs, a /= '@']
@@ -178,46 +149,12 @@ rule (Greater x n) ts = error ("invalid attribute " ++ show x ++ " to compare '>
 --slightly different implementation to Greater as Maybe type declares Nothing < Just n = True
 rule (Less x@(AttributeObj Obj) n) ts = [t | t <- head ts, less (readMaybe (getAtt x t) :: Maybe Int) n]
     where less x n | isJust x = x < Just n
-                   | otherwise = False -- Monad??
+                   | otherwise = False
 rule (Less x n) ts = error ("invalid attribute " ++ show x ++ " to compare '<' with " ++ show n)
 
 rule (NumEq x@(AttributeObj Obj) n) ts = [t | t <- head ts, (readMaybe (getAtt x t) :: Maybe Int) == Just n]
 rule (NumEq x n) ts = error ("invalid attribute " ++ show x ++" to compare '=' with " ++ show n)
 
 rule (AttributeEq x y) ts = [t | t <- head ts, getAtt x t == getAtt y t]
---    where rmvBrackets (AttributeString x) = init (tail x)
---          rmvBrackets x = x
+
 rule (AttributeIn x y) ts = [t | t <- head ts, getAtt x t `elem` concat (evaluator (Stmt y) [ts!!1])]
-
-
-
-{-
-data Stmt = Stmt Query
-          | StmtOutput Query String
-            deriving Show 
-data Query = QueryCondition Attribute File Condition
-            | Query Attribute File
-            deriving Show 
-data File = Files File File
-            | File String
-            deriving Show 
-data Condition = ConditionAND Condition Condition
-                | ConditionOR Condition Condition
-                | Greater Attribute Int
-                | Less Attribute Int
-                | NumEq Attribute Int
-                | AttributeEq Attribute Attribute
-                | AttributeIn Attribute Query
-                deriving Show
-data Attribute = Attributes Attribute Attribute
-                | Subj
-                | Pred
-                | AttributeObj Obj
-                | AttributeString String
-                | AttributeBoolean Bool
-                deriving Show
-data Obj = Obj
-         | ObjAdd Int
-         deriving Show
-}
--}
