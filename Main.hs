@@ -18,7 +18,6 @@ import SelectAttributes
 import SortOut
 
 main :: IO ()
--- main = catch lexer handler
 main = do
     (fileName : _) <- getArgs
     stmtString <- readFile fileName
@@ -32,8 +31,7 @@ main = do
 
     triplePairs <- mapM getTriples stmtPairs
 
-    putStrLn $ sortOut $ evalIt stmts triplePairs
-
+    --prints output to file if specified, prints to stdout otherwise
     if isOutFile (last stmts) then 
         writeFile (getOutFile (last stmts)) (sortOut (evalIt stmts triplePairs)) 
         else print (sortOut (evalIt stmts triplePairs))
@@ -54,7 +52,7 @@ getInStmt (Stmt (QueryCondition _ _ (AttributeIn _ q))) = Just $ Stmt q
 getInStmt (StmtOutput (QueryCondition _ _ (AttributeIn _ q)) _) = Just $ Stmt q
 getInStmt _ = Nothing
 
---takes a statement and returns a list of that statement and, if there, it's IN statement
+--takes a statement and returns a list of that statement and, if there, its nested statement (IN)
 stmtToInnerPair :: Stmt -> [Stmt]
 stmtToInnerPair s | isNothing (getInStmt s) = [s]
                   | otherwise = [s, fromJust $ getInStmt s]
@@ -65,18 +63,21 @@ queryFile (StmtOutput (Query _ f) _) = getFilePaths f
 queryFile (Stmt (QueryCondition _ f _)) = getFilePaths f
 queryFile (StmtOutput (QueryCondition _ f _) _) = getFilePaths f
 
---Converts Files to list of FilePaths in Inputs folder
+--converts Files to list of FilePaths in Inputs folder
 getFilePaths :: File -> [FilePath]
-getFilePaths (File x) = ["Inputs/" ++ x ++ ".ttl"]
+getFilePaths (File x) = [x ++ ".ttl"]
 getFilePaths (Files x y) = getFilePaths x ++ getFilePaths y
 
+--checks if statement has an output filename specified
 isOutFile :: Stmt -> Bool
 isOutFile (StmtOutput _ _) = True
 isOutFile _ = False
 
+--gets the output filename from the statement
 getOutFile :: Stmt -> String
 getOutFile (StmtOutput (Query {}) s) = s ++ ".ttl"
 getOutFile (StmtOutput (QueryCondition {}) s) = s ++ ".ttl"
+getOutFile _ = error "no output filename found"
 
 inputsToTriples :: [String] -> [Triple]
 inputsToTriples = foldr
@@ -98,8 +99,10 @@ replace xs | Just xs <- stripPrefix "><" xs = "> <" ++ replace xs
 replace (x:xs) = x : replace xs
 replace [] = []
 
+f xs = (head xs, xs!!1, xs!!2)
+
 stringListToTripleList :: [String] -> [Triple]
-stringListToTripleList = map ((head xs, xs!!1, xs!!2) . words)
+stringListToTripleList = map (f . words)
 
 --takes statments and their triples in two lists
 evalIt :: [Stmt] -> [[[Triple]]] -> [[String]]

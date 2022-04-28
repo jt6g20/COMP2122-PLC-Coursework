@@ -26,8 +26,4 @@ SelectAttributes.hi
 SelectAttributes.o
 SortOut.hi
 SortOut.o
-in1.txt
-in2.txt
-in3.txt
-in4.txt
-in5.txt
+out1.ttl
