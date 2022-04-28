@@ -32,3 +32,10 @@ getAtt (AttributeBoolean True) x = "true" --ttl uses lowercase for booleans
 getAtt (AttributeBoolean False) x = "false"
 getAtt _ _ = error "invalid attribute" --Attributes constructor not allowed
 
+--concats elements and adds spaces depending on if they are URIs 
+join :: [String] -> String
+join [x,y,z] | "<" `isPrefixOf` z = x ++ y ++ z
+             | otherwise = x ++ y ++ " " ++ z
+join [x,y] | "<" `isPrefixOf` y = x ++ y
+           | otherwise = x ++ " " ++ y
+join _ = error "out of scope"

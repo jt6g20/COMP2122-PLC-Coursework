@@ -1,18 +1,12 @@
 module SortOut where
 
+import Utilities
 import Data.List
 import Data.Function
 import Data.Maybe
 
 sortOut :: [[String]] -> String
 sortOut xss = concatMap (\x -> join x ++ " .\n") (sortAtt (sortBy (compare `on` head) (rmvDupl xss)) (-1))
-
-join :: [String] -> String
-join [x,y,z] | "<" `isPrefixOf` z = x ++ y ++ z
-             | otherwise = x ++ y ++ " " ++ z
-join [x,y] | "<" `isPrefixOf` y = x ++ y
-           | otherwise = x ++ " " ++ y
-join _ = error "out of scope"
 
 sortAtt :: Ord a => [[a]] -> Int -> [[a]]
 sortAtt xss@(xs:_) n | n == length xs - 1 = xss

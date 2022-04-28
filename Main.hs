@@ -98,21 +98,8 @@ replace xs | Just xs <- stripPrefix "><" xs = "> <" ++ replace xs
 replace (x:xs) = x : replace xs
 replace [] = []
 
-tripleListToTriple :: [String] -> Triple
-tripleListToTriple xs = (head xs, xs!!1, xs!!2)
-
 stringListToTripleList :: [String] -> [Triple]
-stringListToTripleList = map (tripleListToTriple . words)
-
-condition :: String -> [Triple] -> [Triple]
-condition s xs = [x | x <- xs, subjMatch s x]
-
-subjMatch :: String -> Triple -> Bool
-subjMatch s (x, _, _) = x == s
-predMatch :: String -> Triple -> Bool
-predMatch s (_, x, _) = x == s
-objMatch :: String -> Triple -> Bool
-objMatch s (_, _, x) = x == s
+stringListToTripleList = map ((head xs, xs!!1, xs!!2) . words)
 
 --takes statments and their triples in two lists
 evalIt :: [Stmt] -> [[[Triple]]] -> [[String]]
@@ -124,13 +111,6 @@ evalIt (x:xs) (y:ys) = evaluator x y ++ evalIt xs ys
 evaluator :: Stmt -> [[Triple]] -> [[String]]
 evaluator (Stmt q) ts = handleQuery q ts
 evaluator (StmtOutput q s) ts = handleQuery q ts
-
-join :: [String] -> String
-join [x,y,z] | "<" `isPrefixOf` z = x ++ y ++ z
-             | otherwise = x ++ y ++ " " ++ z
-join [x,y] | "<" `isPrefixOf` y = x ++ y
-           | otherwise = x ++ " " ++ y
-join _ = error "out of scope"
 
 handleQuery :: Query -> [[Triple]] -> [[String]]
 handleQuery (QueryCondition a f c) ts = select a (rule c ts)
