@@ -7,6 +7,7 @@ import Text.Read
 
 type Triple = (String, String, String)
 
+--code from https://codereview.stackexchange.com/a/7009 
 --splits string based on char delimiter
 splitOn :: Char -> String -> [String]
 splitOn c s = map (\a -> [x | x <- a, x /= c]) $ groupBy (\a b -> b /= c) s

@@ -5,6 +5,7 @@ import Data.List
 import Data.Function
 import Data.Maybe
 
+--code from https://stackoverflow.com/questions/16108714/removing-duplicates-from-a-list-in-haskell-without-elem
 --removes duplicates and sorts the output before transforming it to the final output
 sortOut :: [[String]] -> String
 sortOut xss = concatMap (\x -> join x ++ " .\n") (sortAtt (sortBy (compare `on` head) (rmvDupl xss)) (-1))
