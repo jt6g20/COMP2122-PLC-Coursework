@@ -56,6 +56,7 @@ stmtToInnerPair :: Stmt -> [Stmt]
 stmtToInnerPair s | isNothing (getInStmt s) = [s]
                   | otherwise = [s, fromJust $ getInStmt s]
 
+--gets the filepaths of files in the statement
 queryFile :: Stmt -> [FilePath]
 queryFile (Stmt (Query _ f)) = getFilePaths f
 queryFile (StmtOutput (Query _ f) _) = getFilePaths f
@@ -147,4 +148,5 @@ rule (NumEq x n) ts = error ("invalid attribute " ++ show x ++" to compare '=' w
 
 rule (AttributeEq x y) ts = [t | t <- head ts, getAtt x t == getAtt y t]
 
+--uses the list of file contents ts pre-parsed from the main function to get the triples for the nested statement
 rule (AttributeIn x y) ts = [t | t <- head ts, getAtt x t `elem` concat (evaluator (Stmt y) [ts!!1])]
