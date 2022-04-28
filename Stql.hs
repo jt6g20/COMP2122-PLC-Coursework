@@ -32,8 +32,16 @@ main = do
     triplePairs <- mapM getTriples stmtPairs
 
     putStrLn (sortOut (evalIt stmts triplePairs))
+<<<<<<< HEAD:Stql.hs
     --prints output to file if specified
     if isOutFile (last stmts) then writeFile (getOutFile (last stmts)) (sortOut (evalIt stmts triplePairs)) else return()
+=======
+    
+    --prints output to file if specified
+    if isOutFile (last stmts) then 
+        writeFile (getOutFile (last stmts)) (sortOut (evalIt stmts triplePairs)) else
+        return ()
+>>>>>>> c39cb07071d930d55f125aaf8915b926ce9dc289:Main.hs
 
 --takes a list of statements and returns and IO object of a list of lists of their triples
 getTriples :: [Stmt] -> IO [[Triple]]

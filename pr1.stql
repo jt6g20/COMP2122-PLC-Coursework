@@ -1,1 +1,1 @@
-SELECT <Subj> <Pred> <Obj> FROM foo AND bar OUTPUT out1
+SELECT <Subj> <Pred> <Obj> FROM foo AND bar

@@ -1,1 +1,1 @@
-SELECT <Subj> <Pred> <Obj> FROM foo WHERE <Subj> = <http://www.cw.org/#problem2> AND <Obj> = true OUTPUT out2
+SELECT <Subj> <Pred> <Obj> FROM foo WHERE <Subj> = <http://www.cw.org/#problem2> AND <Obj> = true

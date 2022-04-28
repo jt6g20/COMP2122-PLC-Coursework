@@ -1,3 +1,3 @@
-SELECT <Subj> <http://www.cw.org/problem5/#inRange> false FROM fooProb5 WHERE <Obj> < 0 OR <Obj> > 99
-SELECT <Subj> <Pred> <Obj> + 1 FROM fooProb5 WHERE <Obj> > -1 AND <Obj> < 100
-SELECT <Subj> <http://www.cw.org/problem5/#inRange> true FROM fooProb5 WHERE <Obj> > -1 AND <Obj> < 100 OUTPUT out5
+SELECT <Subj> <http://www.cw.org/problem5/#inRange> false FROM foo WHERE <Obj> < 0 OR <Obj> > 99
+SELECT <Subj> <Pred> <Obj> + 1 FROM foo WHERE <Obj> > -1 AND <Obj> < 100
+SELECT <Subj> <http://www.cw.org/problem5/#inRange> true FROM foo WHERE <Obj> > -1 AND <Obj> < 100
