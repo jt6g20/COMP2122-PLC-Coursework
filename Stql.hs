@@ -1,4 +1,4 @@
-module Main where
+module Stql where
 
 import Tokens
 import System.IO
