@@ -1,6 +1,7 @@
 module PredicateLists where
 import Utilities
 
+--transforms predicate lists to include their common subjects jnto separate lines
 predListEvaluator :: String -> [String] -> [String]
 predListEvaluator "" (x:xs) = x : predListEvaluator (head $ words x) xs
 predListEvaluator subj (x:xs) = (subj ++ x) : predListEvaluator subj xs

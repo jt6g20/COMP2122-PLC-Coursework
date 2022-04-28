@@ -16,12 +16,12 @@ prefixIt (x:xs) ps = unwords (mapp rmvPrefix (take 3 (splitOn ' ' x)) ps) : pref
 --if string isn't already URI or base URI reference,
 --find the prefix reference and return the new string
 rmvPrefix :: String -> [(String, String)] -> String
-rmvPrefix x ps | not ("<" `isPrefixOf` x) && (":" `isInfixOf` x) = findURI (head split) ps ++ last split ++ ">"
-               | otherwise = x
-               where split = splitOn ':' x
-                     findURI x [] = error "unknown prefix"
-                     findURI x (p:ps) | x == fst p = snd p
-                                      | otherwise = findURI x ps
+rmvPrefix a@(x:xs) ps | (x /= '<') && (":" `isInfixOf` a) = findURI (head split) ps ++ last split ++ ">"
+                      | otherwise = a
+                      where split = splitOn ':' a
+                            findURI x [] = error "unknown prefix"
+                            findURI x (p:ps) | x == fst p = snd p
+                                          | otherwise = findURI x ps
 
 --builds a list of prefix and URI pairs from @prefix lines
 buildPrefixes :: [String] -> [(String, String)]

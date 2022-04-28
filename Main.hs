@@ -31,11 +31,10 @@ main = do
 
     triplePairs <- mapM getTriples stmtPairs
 
+    putStrLn (sortOut (evalIt stmts triplePairs))
     --prints output to file if specified, prints to stdout otherwise
-    if isOutFile (last stmts) then 
-        writeFile (getOutFile (last stmts)) (sortOut (evalIt stmts triplePairs)) 
-        else print (sortOut (evalIt stmts triplePairs))
-
+    --if isOutFile (last stmts) then 
+    --writeFile (getOutFile (last stmts)) (sortOut (evalIt stmts triplePairs))
 
 --takes a list of statements and returns and IO object of a list of lists of their triples
 getTriples :: [Stmt] -> IO [[Triple]]
@@ -79,6 +78,7 @@ getOutFile (StmtOutput (Query {}) s) = s ++ ".ttl"
 getOutFile (StmtOutput (QueryCondition {}) s) = s ++ ".ttl"
 getOutFile _ = error "no output filename found"
 
+--parses the raw input into an absolute triple format for evaluation
 inputsToTriples :: [String] -> [Triple]
 inputsToTriples = foldr
       (\ x
@@ -88,21 +88,27 @@ inputsToTriples = foldr
                     $ prefixes $ bases $ objLists $ predLists $ inputToList x)))
       []
 
+--filters prefixes out
 onlyTriples :: [String] -> [String]
 onlyTriples xs = [a:as | (a:as) <- xs, a /= '@']
 
+--parses the raw input into a list
 inputToList :: String -> [String]
 inputToList s = [replace x | x <- lines s, x /= ""]
 
+--adds spaces between attributes when needed
 replace :: String -> String
 replace xs | Just xs <- stripPrefix "><" xs = "> <" ++ replace xs
 replace (x:xs) = x : replace xs
 replace [] = []
 
-f xs = (head xs, xs!!1, xs!!2)
+--transforms a list of attributes into a triple
+stringToTriple :: [String] -> Triple
+stringToTriple xs = (head xs, xs!!1, xs!!2)
 
+--transforms each list of attributes into a triple
 stringListToTripleList :: [String] -> [Triple]
-stringListToTripleList = map (f . words)
+stringListToTripleList = map (stringToTriple . words)
 
 --takes statments and their triples in two lists
 evalIt :: [Stmt] -> [[[Triple]]] -> [[String]]
@@ -115,6 +121,7 @@ evaluator :: Stmt -> [[Triple]] -> [[String]]
 evaluator (Stmt q) ts = handleQuery q ts
 evaluator (StmtOutput q s) ts = handleQuery q ts
 
+--calls the select and rule function if needed
 handleQuery :: Query -> [[Triple]] -> [[String]]
 handleQuery (QueryCondition a f c) ts = select a (rule c ts)
 handleQuery (Query a f) ts = select a (head ts)
