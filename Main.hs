@@ -36,7 +36,7 @@ main = do
     --prints output to file if specified
     if isOutFile (last stmts) then 
         writeFile (getOutFile (last stmts)) (sortOut (evalIt stmts triplePairs)) else
-        putStrLn ""
+        return ()
 
 --takes a list of statements and returns and IO object of a list of lists of their triples
 getTriples :: [Stmt] -> IO [[Triple]]
